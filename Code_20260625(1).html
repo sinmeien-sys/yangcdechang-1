@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 仅国内可访问ECharts，无任何境外资源 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    background: #E8E5DE;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #3A3832;
+    min-height: 100vh;
+    padding: 24px 30px;
+}
+.page-header {
+    padding-bottom: 16px;
+    border-bottom: 0.5px solid rgba(80,70,60,0.2);
+    margin-bottom: 20px;
+}
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2B2923;
+    letter-spacing: 0.04em;
+}
+.page-header .subtext {
+    font-size: 13px;
+    color: #7A7268;
+    margin-top: 6px;
+}
+/* 上下纵向布局 */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: 90vh;
+}
+.panel {
+    flex: 1;
+    background: #F2EFE8;
+    border-radius: 14px;
+    border: 0.5px solid rgba(80,70,60,0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.panel-title {
+    padding: 14px 20px 0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: #7A7268;
+}
+.panel-note {
+    padding: 3px 20px 10px;
+    font-size: 11px;
+    color: #9A9288;
+}
+.chart-wrap {
+    flex: 1;
+    width: 100%;
+}
+.legend-wrap {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 0 20px 10px;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #7A7268;
+}
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+</style>
+</head>
+<body>
+<div class="page-header">
+    <h1>杨德昌电影｜台北故事空间汇集</h1>
+    <div class="subtext">内置台北矢量街区底图 · 空间标注 + 情绪热力模拟图</div>
+</div>
+<div class="container">
+    <!-- 上方：台北实景标点地图【完全不改动，保留原代码】 -->
+    <div class="panel">
+        <div class="panel-title">台北电影实景街道地图</div>
+        <div class="panel-note">内置台北核心行政区矢量底图，可拖拽缩放；四类空间标点，悬浮显示影片取景地址</div>
+        <div class="legend-wrap">
+            <span class="legend-item"><span class="legend-dot" style="background:#B8967A"></span>家庭空间</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#6E8A7A"></span>商业空间</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#7A8C9A"></span>街道空间</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#7A6E8C"></span>夜晚空间</span>
+        </div>
+        <div class="chart-wrap" id="sceneMap"></div>
+    </div>
+
+    <!-- 下方：修复后情绪热力图（移除失效contour，放大热力色块，保证可见） -->
+    <div class="panel">
+        <div class="panel-title">情绪空间热力模拟图</div>
+        <div class="panel-note">同步同款台北矢量街区底图；数值越高=压抑/冲突，低值代表平淡日常空白</div>
+        <div class="chart-wrap" id="moodContour"></div>
+    </div>
+</div>
+
+<script>
+// 莫兰迪统一配色
+const MORANDI = {
+    warm3: '#B8967A',
+    cool4: '#6E8A7A',
+    cool1: '#7A8C9A',
+    accent: '#7A6E8C',
+    lowMood: '#E2DDE0',
+    midMood: '#B8A3B6',
+    highMood: '#94748C',
+    bgLight: '#F2EFE8',
+    textDark: '#3A3832'
+};
+
+// ===================== 内置台北核心区域矢量地图数据 =====================
+const taipeiGeoData = {
+    type: 'FeatureCollection',
+    features: [
+        // 中正区（牯岭街核心）
+        {
+            type: 'Feature',
+            properties: { name: '中正区' },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[[15,10],[30,8],[35,30],[18,32],[15,10]]]
+            }
+        },
+        // 大安区（仁爱路、敦化南路）
+        {
+            type: 'Feature',
+            properties: { name: '大安区' },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[[32,12],[60,10],[65,40],[38,42],[32,12]]]
+            }
+        },
+        // 万华区（华西街夜市）
+        {
+            type: 'Feature',
+            properties: { name: '万华区' },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[[10,28],[22,26],[25,50],[12,52],[10,28]]]
+            }
+        },
+        // 信义区（松仁路、威秀）
+        {
+            type: 'Feature',
+            properties: { name: '信义区' },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[[62,15],[85,13],[88,45],[66,48],[62,15]]]
+            }
+        },
+        // 中和城郊
+        {
+            type: 'Feature',
+            properties: { name: '中和区' },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[[5,45],[18,43],[20,70],[8,72],[5,45]]]
+            }
+        }
+    ]
+};
+// 注册内置台北矢量地图
+echarts.registerMap('taipei_inner', taipeiGeoData);
+
+// ===================== 1、上方台北空间标点图【完全原样保留无修改】 =====================
+const sceneChart = echarts.init(document.getElementById('sceneMap'));
+const sceneOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+        trigger: 'item',
+        backgroundColor: MORANDI.bgLight,
+        borderColor: 'rgba(80,70,60,0.2)',
+        textStyle: { color: MORANDI.textDark, fontSize: 12 }
+    },
+    geo: {
+        map: 'taipei_inner',
+        zoom: 1.2,
+        center: [40, 25],
+        roam: true,
+        itemStyle: {
+            areaColor: '#E6E2DB',
+            borderColor: '#C8C2BB',
+            borderWidth: 1
+        },
+        emphasis: { itemStyle: { areaColor: '#DCD8D0' } },
+        label: { show: false }
+    },
+    series: [
+        // 家庭空间
+        {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            symbolSize: 14,
+            itemStyle: { color: MORANDI.warm3 },
+            data: [
+                { name: '牯岭街眷村｜《牯岭街少年杀人事件》', value: [22, 18] },
+                { name: '仁爱路公寓｜《一一》NJ家', value: [45, 20] },
+                { name: '迪化街老宅｜《青梅竹马》', value: [24, 36] },
+                { name: '敦化南路公寓｜《恐怖分子》', value: [48, 28] }
+            ]
+        },
+        // 商业空间
+        {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            symbolSize: 12,
+            itemStyle: { color: MORANDI.cool4 },
+            data: [
+                { name: '敦化北路广告公司｜《独立时代》', value: [52, 30] },
+                { name: '衡阳路影楼｜《海滩的一天》', value: [20, 26] },
+                { name: '信义松仁路商铺｜《麻将》', value: [70, 32] }
+            ]
+        },
+        // 街道空间
+        {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            symbolSize: 10,
+            itemStyle: { color: MORANDI.cool1 },
+            data: [
+                { name: '牯岭街建国中学道路', value: [21, 16] },
+                { name: '信义威秀主干道', value: [72, 28] },
+                { name: '中和城郊通勤路', value: [12, 56] }
+            ]
+        },
+        // 夜晚空间
+        {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            symbolSize: 13,
+            itemStyle: { color: MORANDI.accent },
+            data: [
+                { name: '万华华西街夜市', value: [16, 34] },
+                { name: '大安深夜冲突暗巷', value: [54, 34] },
+                { name: '中山堂夜间广场', value: [26, 24] }
+            ]
+        }
+    ]
+};
+sceneChart.setOption(sceneOption);
+
+// ===================== 2、修复后情绪热力图（核心修复：移除contour、放大热力、增强可见度） =====================
+const moodChart = echarts.init(document.getElementById('moodContour'));
+// 情绪采样坐标与上方地图完全对应
+const moodData = [
+    [22, 18, 92],  // 牯岭街 高冲突
+    [45, 20, 42],  // 一一公寓 平淡
+    [48, 28, 76],  // 恐怖分子公寓 压抑
+    [16, 34, 63],  // 万华夜市 躁动
+    [52, 30, 51],  // 广告公司 轻度焦虑
+    [21, 16, 88],  // 牯岭街校园道路
+    [70, 32, 70],  // 麻将商铺
+    [24, 36, 36],  // 青梅竹马老宅
+    [12, 56, 48],  // 中和城郊
+    [54, 34, 81],  // 大安暗巷
+    [26, 24, 85],  // 中山堂广场
+    [20, 26, 55]   // 婚纱影楼
+];
+const moodOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+        trigger: 'item',
+        backgroundColor: MORANDI.bgLight,
+        borderColor: 'rgba(80,70,60,0.2)',
+        textStyle: { color: MORANDI.textDark, fontSize: 12 },
+        formatter: params => `情绪强度：${params.data[2]}<br>高=压抑冲突 / 低=平淡日常`
+    },
+    visualMap: {
+        min: 30,
+        max: 95,
+        left: 10,
+        bottom: 15,
+        dimension: 2,
+        text: ['压抑冲突', '平淡日常'],
+        textStyle: { color: '#7A7268', fontSize: 11 },
+        inRange: { color: [MORANDI.lowMood, MORANDI.midMood, MORANDI.highMood] }
+    },
+    geo: {
+        map: 'taipei_inner',
+        zoom: 1.2,
+        center: [40, 25],
+        roam: true,
+        itemStyle: {
+            areaColor: '#EEEBE6',
+            borderColor: '#D1CDC6',
+            borderWidth: 1
+        },
+        label: { show: false }
+    },
+    series: [
+        // 热力层【大幅放大模糊半径+点尺寸，解决看不见】
+        {
+            type: 'heatmap',
+            coordinateSystem: 'geo',
+            data: moodData,
+            blurSize: 30,
+            pointSize: 16
+        },
+        // 仅保留采样小点标记，删除失效等高线contour
+        {
+            type: 'scatter',
+            coordinateSystem: 'geo',
+            symbolSize: 7,
+            itemStyle: { color: '#4A3E46' },
+            data: moodData.map(p => [p[0], p[1]])
+        }
+    ]
+};
+moodChart.setOption(moodOption);
+
+// 窗口自适应
+window.addEventListener('resize', () => {
+    sceneChart.resize();
+    moodChart.resize();
+});
+</script>
+</body>
+</html>

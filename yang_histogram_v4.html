@@ -1,0 +1,124 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{background:#F2EFE8;border-radius:14px;border:0.5px solid rgba(80,70,60,0.18);padding:20px 24px 16px;color:#3A3832;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.mc{background:#E8E5DE;border-radius:10px;padding:12px 14px}
+.mc-l{font-size:11px;color:#9A9288;margin-bottom:4px}
+.mc-v{font-size:20px;font-weight:700;color:#2B2923}
+.mc-s{font-size:11px;color:#9A9288;margin-top:2px}
+.sec{font-size:11px;color:#9A9288;letter-spacing:.06em;margin-bottom:8px}
+.leg{display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:#7A7268;flex-wrap:wrap}
+.leg span{display:flex;align-items:center;gap:5px}
+.lsq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.lln{width:18px;height:0;border-top:2px dashed #B8967A;flex-shrink:0}
+</style>
+<div class="wrap">
+  <h2 style="position:absolute;width:1px;height:1px;overflow:hidden">杨德昌电影作品年份分布仪表盘</h2>
+  <div class="metrics">
+    <div class="mc"><div class="mc-l">创作生涯</div><div class="mc-v">25年</div><div class="mc-s">1982–2000</div></div>
+    <div class="mc"><div class="mc-l">长片作品</div><div class="mc-v">7部</div><div class="mc-s">每部平均3.6年</div></div>
+    <div class="mc"><div class="mc-l">最高间隔</div><div class="mc-v">5年</div><div class="mc-s">1991→1994→1996</div></div>
+    <div class="mc"><div class="mc-l">收官之作</div><div class="mc-v">《一一》</div><div class="mc-s">坎城最佳导演</div></div>
+  </div>
+  <div class="sec">作品年份分布 + 累计数量</div>
+  <div class="leg">
+    <span><span class="lsq" style="background:#7A8C9A"></span>年度作品数</span>
+    <span><span class="lln"></span>累计作品数</span>
+  </div>
+  <div style="position:relative;width:100%;height:280px">
+    <canvas id="hc" role="img" aria-label="杨德昌1982至2000年电影年份分布直方图"></canvas>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const allYears=[];
+for(let y=1982;y<=2000;y++) allYears.push(String(y));
+const filmMap={
+  '1982':{full:'《光阴的故事》',note:'处女作・联合执导'},
+  '1985':{full:'《青梅竹马》',note:'城市疏离・首次独立'},
+  '1986':{full:'《恐怖分子》',note:'台湾新浪潮里程碑'},
+  '1991':{full:'《牯岭街少年杀人事件》',note:'4小时史诗・集体记忆'},
+  '1994':{full:'《独立时代》',note:'都市群像・中产批判'},
+  '1996':{full:'《麻将》',note:'青年迷失・价值真空'},
+  '2000':{full:'《一一》',note:'坎城最佳导演・生命三段式'},
+};
+const counts=allYears.map(y=>filmMap[y]?1:0);
+let cum=0;
+const cumulative=allYears.map(y=>{cum+=(filmMap[y]?1:0);return cum;});
+
+new Chart(document.getElementById('hc'),{
+  data:{
+    labels:allYears,
+    datasets:[
+      {
+        type:'bar',label:'年度作品数',data:counts,
+        backgroundColor:'rgba(122,140,154,0.75)',
+        borderColor:'#5A6875',borderWidth:1,borderRadius:3,
+        yAxisID:'y',order:2,
+      },
+      {
+        type:'line',label:'累计作品数',data:cumulative,
+        borderColor:'#B8967A',borderWidth:2,borderDash:[5,4],
+        pointBackgroundColor:allYears.map(y=>filmMap[y]?'#B8967A':'transparent'),
+        pointBorderColor:allYears.map(y=>filmMap[y]?'#B8967A':'transparent'),
+        pointRadius:allYears.map(y=>filmMap[y]?4:2),
+        pointHoverRadius:6,tension:0.3,fill:false,
+        yAxisID:'y2',order:1,
+      }
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    layout:{padding:{top:8,left:4,right:4,bottom:0}},
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#F2EFE8',
+        titleColor:'#2B2923',bodyColor:'#7A7268',
+        borderColor:'rgba(80,70,60,0.2)',borderWidth:1,
+        padding:10,cornerRadius:8,
+        filter:item=>item.raw>0||item.datasetIndex===1,
+        callbacks:{
+          title:items=>items[0].label+'年',
+          label:item=>{
+            if(item.datasetIndex===0&&item.raw>0) return filmMap[item.label]?.full||'';
+            if(item.datasetIndex===1) return '累计：'+item.raw+' 部';
+            return null;
+          },
+          afterLabel:item=>{
+            if(item.datasetIndex===0&&item.raw>0) return filmMap[item.label]?.note||'';
+            return null;
+          }
+        }
+      }
+    },
+    scales:{
+      x:{
+        ticks:{
+          color:'#9A9288',font:{size:11},
+          autoSkip:false,maxRotation:0,minRotation:0,
+          callback:(v,i)=>filmMap[allYears[i]]?allYears[i]:''
+        },
+        grid:{color:'rgba(80,70,60,0.08)'},
+        border:{color:'rgba(80,70,60,0.15)'}
+      },
+      y:{
+        position:'left',min:0,max:2,
+        title:{display:true,text:'年度作品数',color:'#9A9288',font:{size:11}},
+        ticks:{color:'#9A9288',stepSize:1},
+        grid:{color:'rgba(80,70,60,0.08)'},
+        border:{color:'rgba(80,70,60,0.15)'}
+      },
+      y2:{
+        position:'right',min:0,max:8,
+        title:{display:true,text:'累计作品数',color:'#9A9288',font:{size:11}},
+        ticks:{color:'#9A9288',stepSize:1},
+        grid:{drawOnChartArea:false},
+        border:{color:'rgba(80,70,60,0.15)'}
+      }
+    }
+  }
+});
+</script>
