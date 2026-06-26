@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>杨德昌电影系统 · 总力导向图</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei","PingFang SC",serif}
+body{background:linear-gradient(135deg,#F2F0EB 0%,#E8E2D2 100%);min-height:100vh;padding:40px 20px;display:flex;align-items:center;justify-content:center}
+.container{width:1000px;background:#E6DDC6;padding:40px 40px 30px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.10);position:relative}
+h1{text-align:center;color:#2B2B2B;font-size:26px;margin-bottom:6px;letter-spacing:.05em}
+.subtitle{text-align:center;color:#7C8A99;font-size:13px;margin-bottom:24px;font-style:italic;letter-spacing:.1em}
+#chart{position:relative;background:#FFFFFF;border-radius:14px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.04)}
+svg{background:#FFFFFF;border-radius:14px;display:block;margin:0 auto}
+.tooltip{position:absolute;pointer-events:none;background:rgba(43,43,43,.96);color:#F2F0EB;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6;opacity:0;transition:opacity .2s;box-shadow:0 6px 20px rgba(0,0,0,.25);backdrop-filter:blur(4px);max-width:200px;z-index:10}
+.tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(43,43,43,.96)}
+.tooltip strong{color:#E6B89C;font-size:13px;display:block;margin-bottom:2px}
+.tooltip .desc{color:#BFBFBF;font-size:11px}
+.legend{margin-top:22px;display:flex;justify-content:center;gap:32px;font-size:13px;color:#2B2B2B}
+.legend-item{display:flex;align-items:center;gap:8px;padding:4px 10px;background:rgba(255,255,255,.5);border-radius:14px}
+.dot{width:14px;height:14px;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.source{margin-top:18px;font-size:12px;color:#7C8A99;line-height:1.8;text-align:center;letter-spacing:.04em}
+.hint{position:absolute;top:14px;right:20px;font-size:11px;color:#9A9288;background:rgba(255,255,255,.7);padding:4px 10px;border-radius:10px;letter-spacing:.1em}
+.node-pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>杨德昌电影系统 · 总力导向图</h1>
+  <div class="subtitle">— 五要素的拉扯关系 · HOVER 探细节 —</div>
+  <div id="chart">
+    <div class="hint">悬停节点 · 探要素</div>
+  </div>
+  <div class="tooltip" id="tip"></div>
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:#7C8A99"></div>冷蓝 · 理性结构</div>
+    <div class="legend-item"><div class="dot" style="background:#C97C5D"></div>暖橘 · 情绪节点</div>
+  </div>
+  <div class="source">数据维度：人物 / 城市 / 时间 / 镜头 / 情绪 ｜ 基于杨德昌四部代表作品结构性提取</div>
+</div>
+
+<script>
+const W=930,H=500;
+const nodes=[
+  {id:"人物",group:"warm",x:250,y:150,r:46,desc:"所有故事的容器,承载情绪、困于城市",movies:"《一一》NJ、《牯岭街》小四、《恐怖分子》"},
+  {id:"城市",group:"cold",x:680,y:150,r:46,desc:"理性、压抑的空间,人是城市的囚徒",movies:"台北、牯岭街、仁爱路"},
+  {id:"时间",group:"cold",x:130,y:370,r:46,desc:"流逝与变迁,人被困在时间里",movies:"《一一》NJ的日本出差回忆"},
+  {id:"镜头",group:"cold",x:800,y:370,r:42,desc:"长镜头、克制的凝视,情绪表达",movies:"《牯岭街》4小时长片结构"},
+  {id:"情绪",group:"warm",x:465,y:290,r:52,desc:"所有冲突的源头,被克制地表达",movies:"疏离、压抑、暴力、失落"}
+];
+const links=[
+  {source:"人物",target:"城市",weight:3,label:"困于城市"},
+  {source:"人物",target:"时间",weight:3,label:"流逝"},
+  {source:"人物",target:"情绪",weight:3,label:"承载"},
+  {source:"城市",target:"时间",weight:2,label:"变迁"},
+  {source:"城市",target:"镜头",weight:2,label:"长镜头呈现"},
+  {source:"镜头",target:"情绪",weight:2,label:"克制表达"},
+  {source:"时间",target:"情绪",weight:2,label:"疏离感"},
+  {source:"人物",target:"镜头",weight:1,label:"凝视"}
+];
+const colorMap={warm:"#C97C5D",cold:"#7C8A99"};
+const tip=document.getElementById('tip');
+const svg=d3.select("#chart").append("svg").attr("width",W).attr("height",H);
+
+// 网格背景
+const defs=svg.append("defs");
+defs.append("pattern").attr("id","grid").attr("width",30).attr("height",30).attr("patternUnits","userSpaceOnUse")
+  .append("path").attr("d","M 30 0 L 0 0 0 30").attr("fill","none").attr("stroke","#F0EDE6").attr("stroke-width",1);
+svg.append("rect").attr("width",W).attr("height",H).attr("fill","url(#grid)");
+
+// 连线
+const linkGroup=svg.append("g").attr("class","links");
+const link=linkGroup.selectAll(".link").data(links).enter().append("line")
+  .attr("x1",d=>nodes.find(n=>n.id===d.source).x)
+  .attr("y1",d=>nodes.find(n=>n.id===d.source).y)
+  .attr("x2",d=>nodes.find(n=>n.id===d.target).x)
+  .attr("y2",d=>nodes.find(n=>n.id===d.target).y)
+  .attr("stroke","#2B2B2B")
+  .attr("stroke-width",d=>d.weight*1.4)
+  .attr("opacity",0)
+  .attr("stroke-linecap","round");
+
+// 连线动画进入
+link.transition().duration(1200).delay((d,i)=>i*100).attr("opacity",0.32);
+
+// 连线标签
+const linkLabel=svg.append("g").attr("class","link-labels");
+linkLabel.selectAll("text").data(links).enter().append("text")
+  .attr("x",d=>(nodes.find(n=>n.id===d.source).x+nodes.find(n=>n.id===d.target).x)/2)
+  .attr("y",d=>(nodes.find(n=>n.id===d.source).y+nodes.find(n=>n.id===d.target).y)/2-8)
+  .attr("text-anchor","middle").attr("fill","#7C8A99")
+  .style("font-size","11px").style("font-style","italic").style("font-weight","500")
+  .text(d=>d.label).attr("opacity",0)
+  .transition().duration(800).delay(1500).attr("opacity",1);
+
+// 节点光晕
+const nodeGlow=svg.append("g").attr("class","glows");
+nodeGlow.selectAll("circle").data(nodes).enter().append("circle")
+  .attr("cx",d=>d.x).attr("cy",d=>d.y)
+  .attr("r",d=>d.r+12)
+  .attr("fill",d=>colorMap[d.group])
+  .attr("opacity",0)
+  .transition().duration(1000).delay((d,i)=>500+i*120).attr("opacity",0.12);
+
+// 节点本体
+const nodeGroup=svg.append("g").attr("class","nodes");
+const node=nodeGroup.selectAll(".node").data(nodes).enter().append("g")
+  .attr("transform",d=>`translate(${d.x},${d.y})`)
+  .style("cursor","pointer");
+
+node.append("circle")
+  .attr("r",0)
+  .attr("fill",d=>colorMap[d.group])
+  .attr("stroke","#FFFFFF")
+  .attr("stroke-width",3)
+  .attr("opacity",0.9)
+  .attr("class","node-pulse")
+  .transition().duration(800).delay((d,i)=>300+i*100)
+  .attr("r",d=>d.r);
+
+node.append("text")
+  .attr("text-anchor","middle").attr("fill","#FFFFFF")
+  .style("font-size","16px").style("font-weight","bold").style("letter-spacing",".1em")
+  .text(d=>d.id).attr("opacity",0)
+  .transition().duration(600).delay((d,i)=>700+i*100).attr("opacity",1);
+
+// 节点交互
+node.on("mouseenter",function(event,d){
+  d3.select(this).select("circle").transition().duration(200).attr("r",d.r*1.15).attr("opacity",1);
+  // 高亮相关连线
+  link.transition().duration(200).attr("opacity",l=>(l.source===d.id||l.target===d.id)?0.7:0.08).attr("stroke",l=>(l.source===d.id||l.target===d.id)?"#C97C5D":"#2B2B2B").attr("stroke-width",l=>(l.source===d.id||l.target===d.id)?l.weight*1.8:l.weight*1.4);
+  // tooltip
+  tip.innerHTML=`<strong>${d.id}</strong><div class="desc">${d.desc}</div><div class="desc" style="margin-top:4px;color:#E6B89C">代表:${d.movies}</div>`;
+  tip.style.opacity=1;
+}).on("mousemove",function(event){
+  const rect=document.getElementById('chart').getBoundingClientRect();
+  tip.style.left=(event.clientX-rect.left-tip.offsetWidth/2)+'px';
+  tip.style.top=(event.clientY-rect.top-tip.offsetHeight-18)+'px';
+}).on("mouseleave",function(event,d){
+  d3.select(this).select("circle").transition().duration(200).attr("r",d.r).attr("opacity",0.9);
+  link.transition().duration(300).attr("opacity",0.32).attr("stroke","#2B2B2B").attr("stroke-width",l=>l.weight*1.4);
+  tip.style.opacity=0;
+});
+</script>
+</body>
+</html>

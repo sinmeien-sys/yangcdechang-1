@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>影像分析与音乐可视化</title>
+
+<style>
+body{
+  margin:0;
+  background:#F2F0EB;
+  color:#2B2B2B;
+  font-family:"Microsoft YaHei",Arial,sans-serif;
+}
+
+.page{
+  width:1100px;
+  margin:auto;
+  padding:40px;
+}
+
+header{
+  text-align:center;
+  margin-bottom:35px;
+}
+
+h1{
+  font-size:36px;
+  margin-bottom:10px;
+}
+
+.card{
+  background:#E6DDC6;
+  padding:28px;
+  margin-bottom:30px;
+  border-radius:18px;
+  box-shadow:0 8px 20px rgba(0,0,0,.12);
+}
+
+h2{
+  border-left:8px solid #C97C5D;
+  padding-left:12px;
+}
+
+.desc,.note{
+  line-height:1.8;
+  font-size:16px;
+}
+
+.image-row{
+  display:flex;
+  gap:22px;
+  margin-top:20px;
+}
+
+.image-box{
+  flex:1;
+  text-align:center;
+}
+
+.image-box img{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  border-radius:14px;
+}
+
+.gray{
+  filter:grayscale(100%);
+}
+
+.cold{
+  filter:grayscale(30%) contrast(135%) brightness(88%) hue-rotate(175deg) saturate(70%);
+}
+
+.label{
+  font-weight:bold;
+  margin-top:10px;
+}
+
+audio{
+  width:100%;
+  margin:18px 0;
+}
+
+canvas{
+  width:100%;
+  height:300px;
+  background:#F2F0EB;
+  border-radius:14px;
+  display:block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+<header>
+  <h1>影像分析与音乐可视化</h1>
+  <p>基于杨德昌电影城市叙事风格的图像冷感处理与真实音频频谱可视化</p>
+</header>
+
+<section class="card">
+  <h2>一、图像分析：视觉冷感处理</h2>
+
+  <p class="desc">
+    本部分通过原图、灰度化、冷色增强三种状态，表现杨德昌电影中常见的城市冷感、空间疏离与情绪压抑。
+  </p>
+
+  <div class="image-row">
+    <div class="image-box">
+      <img src="https://sinmeien-sys.github.io/yangcdechang-1/city.jpg" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&h=400&fit=crop';">
+      <div class="label">原始影像</div>
+    </div>
+
+    <div class="image-box">
+      <img class="gray" src="https://sinmeien-sys.github.io/yangcdechang-1/city.jpg" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&h=400&fit=crop';">
+      <div class="label">灰度化处理</div>
+    </div>
+
+    <div class="image-box">
+      <img class="cold" src="https://sinmeien-sys.github.io/yangcdechang-1/city.jpg" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&h=400&fit=crop';">
+      <div class="label">冷色增强处理</div>
+    </div>
+  </div>
+
+  <p class="note">
+    说明：灰度化削弱色彩干扰，对比度增强突出人物与空间结构，冷蓝滤镜强化城市中的理性、压抑与疏离感。
+  </p>
+</section>
+
+<section class="card">
+  <h2>二、音乐可视化：真实音频频谱分析</h2>
+
+  <p class="desc">
+    点击播放音频后，程序会实时读取声音频率，并生成动态频谱柱状图。
+  </p>
+
+  <audio id="audio" controls src="https://sinmeien-sys.github.io/yangcdechang-1/audio.mp3"></audio>
+
+  <canvas id="visualizer" width="1000" height="300"></canvas>
+
+  <p class="note">
+    说明：频谱高低变化代表声音频率与强度变化，用来表现环境音、沉默与情绪张力之间的关系。
+  </p>
+</section>
+
+</div>
+
+<script>
+const audio = document.getElementById("audio");
+const canvas = document.getElementById("visualizer");
+const ctx = canvas.getContext("2d");
+
+let audioContext;
+let analyser;
+let source;
+let dataArray;
+let bufferLength;
+let animationId;
+let hasConnected = false;
+
+audio.addEventListener("play", async function () {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if (!hasConnected) {
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+
+    source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+
+    bufferLength = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLength);
+
+    hasConnected = true;
+  }
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  drawVisualizer();
+});
+
+audio.addEventListener("pause", function () {
+  cancelAnimationFrame(animationId);
+});
+
+audio.addEventListener("ended", function () {
+  cancelAnimationFrame(animationId);
+});
+
+function drawVisualizer() {
+  animationId = requestAnimationFrame(drawVisualizer);
+
+  analyser.getByteFrequencyData(dataArray);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#F2F0EB";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const barWidth = canvas.width / bufferLength;
+  let x = 0;
+
+  for (let i = 0; i < bufferLength; i++) {
+    const barHeight = dataArray[i] * 1.05;
+
+    const gradient = ctx.createLinearGradient(
+      0,
+      canvas.height,
+      0,
+      canvas.height - barHeight
+    );
+
+    gradient.addColorStop(0, "#7C8A99");
+    gradient.addColorStop(1, "#C97C5D");
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+
+    x += barWidth;
+  }
+
+  ctx.fillStyle = "#2B2B2B";
+  ctx.font = "18px Microsoft YaHei";
+  ctx.fillText("实时音乐频谱可视化", 24, 34);
+
+  ctx.font = "14px Microsoft YaHei";
+  ctx.fillText("低频", 24, 280);
+  ctx.fillText("高频", 930, 280);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>杨德昌四部电影影响力评分</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei","PingFang SC",serif}
+body{background:linear-gradient(135deg,#F2F0EB 0%,#E8E2D2 100%);min-height:100vh;padding:40px 20px;display:flex;align-items:center;justify-content:center}
+.container{width:960px;background:#E6DDC6;padding:40px 40px 30px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.10);position:relative}
+h1{text-align:center;color:#2B2B2B;font-size:26px;margin-bottom:6px;letter-spacing:.05em}
+.subtitle{text-align:center;color:#7C8A99;font-size:13px;margin-bottom:28px;font-style:italic;letter-spacing:.1em}
+.chart-wrap{position:relative;width:880px;margin:0 auto;background:#FFFFFF;padding:30px 20px 20px;border-radius:14px;box-shadow:inset 0 2px 8px rgba(0,0,0,.04)}
+.film-label{position:absolute;left:0;width:200px;text-align:right;padding-right:18px;color:#2B2B2B;font-size:16px;font-weight:bold;line-height:1;letter-spacing:.05em;transition:color .2s}
+.film-label.active{color:#C97C5D}
+.film-year{font-size:10px;font-weight:400;color:#7C8A99;display:block;margin-top:2px;letter-spacing:.1em}
+.tooltip{position:absolute;pointer-events:none;background:rgba(43,43,43,.96);color:#F2F0EB;padding:12px 16px;border-radius:8px;font-size:12px;line-height:1.6;opacity:0;transition:opacity .2s;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px;z-index:10}
+.tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(43,43,43,.96)}
+.tooltip strong{color:#E6B89C;font-size:14px;display:block;margin-bottom:4px}
+.tooltip .badge{display:inline-block;padding:2px 8px;background:rgba(201,124,93,.25);color:#E6B89C;border-radius:8px;font-size:10px;margin-right:6px;margin-top:4px}
+.tooltip .desc{color:#BFBFBF;font-size:11px;margin-top:6px;line-height:1.5}
+.bar-row{transition:transform .2s}
+.bar-row:hover{transform:translateX(4px)}
+.bar-rect{cursor:pointer;transition:filter .2s}
+.bar-rect:hover{filter:brightness(1.1) drop-shadow(0 4px 8px rgba(201,124,93,.3))}
+.rank-badge{fill:#FFFFFF;stroke:#2B2B2B;stroke-width:1.5;opacity:0.9}
+.source{margin-top:22px;font-size:12px;color:#7C8A99;line-height:1.8;text-align:center;letter-spacing:.04em}
+.hint{position:absolute;top:18px;right:24px;font-size:11px;color:#9A9288;background:rgba(255,255,255,.7);padding:4px 10px;border-radius:10px;letter-spacing:.1em}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>杨德昌四部代表作品影响力评分</h1>
+  <div class="subtitle">— 横向评分对比 · HOVER 探影片 —</div>
+  <div class="chart-wrap" id="chart">
+    <div class="hint">悬停柱子 · 看影片</div>
+    <div class="film-label" style="top:80px"><span class="film-name">一一</span><span class="film-year">2000 · 173min</span></div>
+    <div class="film-label" style="top:170px"><span class="film-name">牯岭街少年杀人事件</span><span class="film-year">1991 · 237min</span></div>
+    <div class="film-label" style="top:260px"><span class="film-name">独立时代</span><span class="film-year">1994 · 125min</span></div>
+    <div class="film-label" style="top:350px"><span class="film-name">麻将</span><span class="film-year">1996 · 121min</span></div>
+    <div id="bars"></div>
+    <div class="tooltip" id="tip"></div>
+  </div>
+  <div class="source">
+    数据来源：豆瓣电影(满分10分) ｜ 排名依据:综合评分 + 行业影响力
+  </div>
+</div>
+
+<script>
+const data=[
+  {film:"一一",year:2000,score:9.1,color:"#7C8A99",rank:1,year_dur:"2000 · 173min",
+   desc:"杨德昌的收官之作,以家庭视角回顾人生全阶段,获坎城最佳导演奖。",
+   tags:["家庭史诗","时间哲学","坎城最佳导演"]},
+  {film:"牯岭街少年杀人事件",year:1991,score:8.9,color:"#C97C5D",rank:2,year_dur:"1991 · 237min",
+   desc:"4小时长片,讲述1960年代外省眷村少年的暴力青春,杨德昌影史地位奠基之作。",
+   tags:["时代寓言","眷村","影史经典"]},
+  {film:"独立时代",year:1994,score:8.7,color:"#94A3B2",rank:3,year_dur:"1994 · 125min",
+   desc:"聚焦台北白领阶层的儒家困惑与现代性焦虑,杨德昌中后期代表作。",
+   tags:["现代性","儒家","台北白领"]},
+  {film:"麻将",year:1996,score:8.7,color:"#D49F7F",rank:4,year_dur:"1996 · 121min",
+   desc:"以骗局结构呈现青年迷失,杨德昌对都市青年的犀利观察。",
+   tags:["青年迷失","骗局","都市观察"]}
+];
+
+const W=880,H=440,M={top:30,right:90,bottom:50,left:220};
+const innerW=W-M.left-M.right, innerH=H-M.top-M.bottom;
+const svg=d3.select("#bars").append("svg").attr("width",W).attr("height",H)
+  .append("g").attr("transform",`translate(${M.left},${M.top})`);
+
+// 渐变定义
+const defs=svg.append("defs");
+data.forEach((d,i)=>{
+  const grad=defs.append("linearGradient").attr("id",`grad${i}`).attr("x1","0%").attr("y1","0%").attr("x2","100%").attr("y2","0%");
+  grad.append("stop").attr("offset","0%").attr("stop-color",d.color).attr("stop-opacity",0.4);
+  grad.append("stop").attr("offset","100%").attr("stop-color",d.color).attr("stop-opacity",1);
+});
+
+const x=d3.scaleLinear().domain([0,10]).range([0,innerW]);
+const y=d3.scaleBand().domain(data.map(d=>d.film)).range([0,innerH]).padding(0.4);
+
+// 网格线
+svg.append("g").attr("class","grid")
+  .selectAll("line").data(d3.range(0,11,1)).enter().append("line")
+  .attr("x1",d=>x(d)).attr("x2",d=>x(d))
+  .attr("y1",0).attr("y2",innerH)
+  .attr("stroke","#F0EDE6").attr("stroke-width",d=>d%5===0?1.5:0.5);
+
+// 柱子背景
+svg.selectAll(".bg-bar").data(data).enter().append("rect")
+  .attr("x",0).attr("y",d=>y(d.film)).attr("width",innerW).attr("height",y.bandwidth())
+  .attr("fill","#FAF8F2").attr("rx",6);
+
+// 柱子
+const tip=document.getElementById('tip');
+const bars=svg.selectAll(".bar-row").data(data).enter().append("g").attr("class","bar-row");
+
+bars.append("rect")
+  .attr("class","bar-rect")
+  .attr("x",0).attr("y",d=>y(d.film))
+  .attr("height",y.bandwidth())
+  .attr("width",0).attr("rx",6)
+  .attr("fill",(d,i)=>`url(#grad${i})`)
+  .transition().duration(1200).delay((d,i)=>i*150)
+  .attr("width",d=>x(d.score));
+
+// 排名徽章
+bars.append("circle")
+  .attr("class","rank-badge")
+  .attr("cx",-20).attr("cy",d=>y(d.film)+y.bandwidth()/2)
+  .attr("r",11).attr("fill","#2B2B2B")
+  .attr("opacity",0)
+  .transition().duration(500).delay((d,i)=>i*150+800).attr("opacity",0.9);
+
+bars.append("text")
+  .attr("x",-20).attr("y",d=>y(d.film)+y.bandwidth()/2+4)
+  .attr("text-anchor","middle").attr("fill","#FFFFFF")
+  .style("font-size","11px").style("font-weight","bold")
+  .text(d=>d.rank).attr("opacity",0)
+  .transition().duration(500).delay((d,i)=>i*150+800).attr("opacity",1);
+
+// 分数标签
+bars.append("text")
+  .attr("x",d=>x(d.score)+10).attr("y",d=>y(d.film)+y.bandwidth()/2+5)
+  .attr("fill","#2B2B2B").style("font-size","20px").style("font-weight","bold")
+  .text(d=>d.score.toFixed(1)).attr("opacity",0)
+  .transition().duration(500).delay((d,i)=>i*150+1000).attr("opacity",1);
+
+// 满分参考
+bars.append("text")
+  .attr("x",x(10)-4).attr("y",d=>y(d.film)+y.bandwidth()/2+4)
+  .attr("text-anchor","end").attr("fill","#9A9288")
+  .style("font-size","10px").text("/ 10")
+  .attr("opacity",0)
+  .transition().duration(500).delay((d,i)=>i*150+1000).attr("opacity",0.7);
+
+// X 轴
+svg.append("g").attr("transform",`translate(0,${innerH})`)
+  .call(d3.axisBottom(x).ticks(10).tickFormat(d=>d))
+  .selectAll("text").attr("fill","#7C8A99").style("font-size","11px");
+svg.selectAll(".domain,.tick line").attr("stroke","#D8D4CC");
+
+svg.append("text").attr("x",innerW/2).attr("y",innerH+38)
+  .attr("text-anchor","middle").attr("fill","#7C8A99")
+  .style("font-size","12px").text("豆瓣评分(满分10分) · 排名:综合评分+行业影响力");
+
+// 交互
+bars.on("mouseenter",function(event,d){
+  d3.select(this).select(".bar-rect").transition().duration(200).attr("height",y.bandwidth()+4);
+  document.querySelectorAll('.film-label').forEach((el,i)=>{
+    el.classList.toggle('active',data[i].film===d.film);
+  });
+  tip.innerHTML=`<strong>${d.film}</strong>
+    <div style="color:#9A9288;font-size:10px;margin-bottom:6px">${d.year_dur}</div>
+    <div style="color:#E6B89C;font-size:22px;font-weight:bold;margin-bottom:4px">${d.score} <span style="font-size:11px;color:#9A9288">/ 10</span></div>
+    <div class="desc">${d.desc}</div>
+    <div style="margin-top:8px">${d.tags.map(t=>`<span class="badge">${t}</span>`).join('')}</div>`;
+  tip.style.opacity=1;
+}).on("mousemove",function(event){
+  const rect=document.getElementById('chart').getBoundingClientRect();
+  tip.style.left=(event.clientX-rect.left-tip.offsetWidth/2)+'px';
+  tip.style.top=(event.clientY-rect.top-tip.offsetHeight-16)+'px';
+}).on("mouseleave",function(event,d){
+  d3.select(this).select(".bar-rect").transition().duration(200).attr("height",y.bandwidth());
+  document.querySelectorAll('.film-label').forEach(el=>el.classList.remove('active'));
+  tip.style.opacity=0;
+});
+</script>
+</body>
+</html>
