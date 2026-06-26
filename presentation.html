@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>杨德昌电影宇宙 · 期末汇报</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#E8E5DE;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#3A3832}
+.cover{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#E8E5DE 0%,#D9D2C2 100%);position:relative;overflow:hidden}
+.cover-svg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:.3}
+.cover-content{position:relative;z-index:2;text-align:center;padding:0 20px}
+.cover h1{font-size:56px;font-weight:700;color:#2B2923;letter-spacing:.08em;margin-bottom:18px}
+.cover .sub{font-size:18px;color:#7A6E8C;letter-spacing:.3em;margin-bottom:50px;font-weight:300}
+.cover .meta{font-size:14px;color:#7A7268;letter-spacing:.1em;line-height:2}
+.cover .line{width:80px;height:2px;background:#C97C5D;margin:0 auto}
+.scroll-hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);font-size:12px;color:#9A9288;letter-spacing:.2em;animation:b 2s infinite}
+@keyframes b{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-8px)}}
+.nav{position:sticky;top:0;background:rgba(242,239,232,.96);backdrop-filter:blur(8px);z-index:100;display:flex;justify-content:center;flex-wrap:wrap;border-bottom:.5px solid rgba(80,70,60,.2)}
+.nav button{background:none;border:none;padding:14px 18px;font-size:13px;color:#7A7268;cursor:pointer;font-family:inherit;letter-spacing:.04em;position:relative;transition:color .3s;white-space:nowrap}
+.nav button:hover{color:#3A3832}
+.nav button.active{color:#2B2923;font-weight:500}
+.nav button.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:24px;height:2px;background:#C97C5D}
+.module{display:none;min-height:90vh;padding:40px 20px 80px}
+.module.active{display:block}
+.module-header{max-width:1200px;margin:0 auto 24px;text-align:center}
+.module-header h2{font-size:30px;color:#2B2923;font-weight:700;margin-bottom:6px}
+.module-header .en{font-size:12px;color:#7A7268;letter-spacing:.2em;font-style:italic}
+.module-header .tag{display:inline-block;margin-top:8px;padding:3px 10px;background:#E6DDC6;color:#7A6E8C;font-size:11px;border-radius:10px;letter-spacing:.1em}
+.module-iframe{max-width:1200px;margin:0 auto;background:#F2EFE8;border-radius:14px;border:.5px solid rgba(80,70,60,.18);overflow:hidden}
+.module-iframe iframe{width:100%;height:80vh;border:none;display:block}
+.ending{height:60vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#E8E5DE 0%,#D9D2C2 100%)}
+.ending h2{font-size:42px;color:#2B2923;margin-bottom:16px;letter-spacing:.08em}
+.ending p{font-size:16px;color:#7A6E8C;letter-spacing:.15em;margin-bottom:8px}
+.ending .line{width:60px;height:2px;background:#C97C5D;margin:0 auto 24px}
+</style>
+</head>
+<body>
+<section class="cover">
+  <svg class="cover-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#C97C5D" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#7C8A99" stop-opacity=".1"/>
+      </radialGradient>
+    </defs>
+    <circle cx="200" cy="200" r="180" fill="url(#g1)"/>
+    <circle cx="1000" cy="600" r="240" fill="url(#g1)"/>
+    <line x1="100" y1="400" x2="1100" y2="400" stroke="#7A6E8C" stroke-width=".5" opacity=".4"/>
+    <line x1="600" y1="50" x2="600" y2="750" stroke="#7A6E8C" stroke-width=".5" opacity=".4"/>
+  </svg>
+  <div class="cover-content">
+    <h1>杨德昌电影宇宙</h1>
+    <div class="sub">1982 — 2000 · 台湾新电影 · 台北城市叙事</div>
+    <div class="line"></div>
+    <div class="meta" style="margin-top:50px">
+      <div>可视化分析与期末汇报</div>
+      <div style="margin-top:18px;color:#9A9288;font-size:12px">七模块 · 全景展示</div>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ 下滑开始 ↓</div>
+</section>
+
+<nav class="nav">
+  <button class="active" onclick="show(1)">① 海报时间线</button>
+  <button onclick="show(2)">② 创作生涯</button>
+  <button onclick="show(3)">③ 影像与音乐</button>
+  <button onclick="show(4)">④ 五要素关系</button>
+  <button onclick="show(5)">⑤ 影响力评分</button>
+  <button onclick="show(6)">⑥ 台北空间</button>
+  <button onclick="show(7)">⑦ 电影宇宙</button>
+  <button onclick="show(8)">⑧ 作品阐释</button>
+</nav>
+
+<div id="m1" class="module active">
+  <div class="module-header">
+    <h2>海报时间线</h2>
+    <div class="en">— Yang Dechang Film Poster Timeline, 1983–2000 —</div>
+    <div class="tag">18 年 · 7 部长片</div>
+  </div>
+  <div class="module-iframe"><iframe src="yang_poster_timeline.html"></iframe></div>
+</div>
+
+<div id="m2" class="module">
+  <div class="module-header">
+    <h2>创作生涯 · 仪表盘</h2>
+    <div class="en">— Career Dashboard: Annual & Cumulative Output —</div>
+    <div class="tag">平均 2.6 年 / 部 · 最长间隔 5 年</div>
+  </div>
+  <div class="module-iframe"><iframe src="yang_histogram_v4.html"></iframe></div>
+</div>
+
+<div id="m3" class="module">
+  <div class="module-header">
+    <h2>影像分析与音乐可视化</h2>
+    <div class="en">— Visual Coldness Processing & Real-time Audio Spectrum —</div>
+    <div class="tag">图像冷感 · 音频频谱</div>
+  </div>
+  <div class="module-iframe"><iframe src="yang_visual_audio.html"></iframe></div>
+</div>
+
+<div id="m4" class="module">
+  <div class="module-header">
+    <h2>五要素 · 总力导向图</h2>
+    <div class="en">— The Five-Element Force-Directed Graph —</div>
+    <div class="tag">人物 · 城市 · 时间 · 镜头 · 情绪</div>
+  </div>
+  <div class="module-iframe"><iframe src="forceGraph.html"></iframe></div>
+</div>
+
+<div id="m5" class="module">
+  <div class="module-header">
+    <h2>四部代表作 · 影响力评分</h2>
+    <div class="en">— Influence Score of Four Representative Films —</div>
+    <div class="tag">数据来源 · 豆瓣电影</div>
+  </div>
+  <div class="module-iframe"><iframe src="filmBar.html"></iframe></div>
+</div>
+
+<div id="m6" class="module">
+  <div class="module-header">
+    <h2>台北故事空间 · 情绪热力</h2>
+    <div class="en">— Taipei Spatial Annotation & Emotional Heatmap —</div>
+    <div class="tag">实景地图 · 情绪热力</div>
+  </div>
+  <div class="module-iframe"><iframe src="Code_20260625.html"></iframe></div>
+</div>
+
+<div id="m7" class="module">
+  <div class="module-header">
+    <h2>杨德昌电影宇宙 · 全景</h2>
+    <div class="en">— Yang Dechang's Cinematic Universe —</div>
+    <div class="tag">人物结构 · 主题词云 · 关系网络</div>
+  </div>
+  <div class="module-iframe"><iframe src="yang_dechang_viz.html"></iframe></div>
+</div>
+
+<div id="m8" class="module" style="padding-top:80px">
+  <div class="module-header">
+    <h2>作品文字阐释</h2>
+    <div class="en">— Artistic Statement —</div>
+  </div>
+  <div style="max-width:880px;margin:0 auto;background:#F2EFE8;border-radius:14px;padding:50px 60px;border:.5px solid rgba(80,70,60,.18);box-shadow:0 8px 30px rgba(0,0,0,.06)">
+    <div style="font-size:11px;letter-spacing:.3em;color:#7A6E8C;margin-bottom:18px;text-align:center">— VISUALIZATION STATEMENT —</div>
+    <div style="width:60px;height:2px;background:#C97C5D;margin:0 auto 36px"></div>
+    <p style="font-size:17px;line-height:2;color:#2B2923;text-indent:2em;margin-bottom:18px;text-align:justify">
+      本作品以杨德昌 1982—2000 年间的代表作品为研究对象,构建了一套以<strong style="color:#C97C5D">冷暖对冲的莫兰迪配色</strong>为统一视觉语言的电影数据可视化系统。
+    </p>
+    <p style="font-size:17px;line-height:2;color:#2B2923;text-indent:2em;margin-bottom:18px;text-align:justify">
+      作品包含七个模块:<strong style="color:#7A6E8C">海报时间线、创作生涯仪表盘、影像与音乐可视化</strong>,以及力导向图、评分直方图、台北空间图与电影宇宙全景。
+    </p>
+    <p style="font-size:17px;line-height:2;color:#2B2923;text-indent:2em;margin-bottom:18px;text-align:justify">
+      配以<strong style="color:#7A6E8C">冷感图像处理</strong>与<strong style="color:#7A6E8C">真实音频频谱可视化</strong>,从视觉与听觉两个通道强化电影冷感叙事的体验。
+    </p>
+    <p style="font-size:17px;line-height:2;color:#2B2923;text-indent:2em;margin-bottom:0;text-align:justify">
+      整套作品以低饱和的莫兰迪色系贯穿,呼应杨德昌电影<strong style="color:#C97C5D">克制、理性、疏离</strong>的美学气质。
+    </p>
+    <div style="margin-top:40px;display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:.5px solid rgba(80,70,60,.18)">
+      <div style="font-size:11px;color:#9A9288;letter-spacing:.1em">字数 · 约 260 字</div>
+      <div style="font-size:11px;color:#9A9288;letter-spacing:.1em">杨德昌电影宇宙可视化 · 期末汇报</div>
+    </div>
+  </div>
+</div>
+
+<section class="ending">
+  <div class="line"></div>
+  <h2>谢谢观看</h2>
+  <p>THANK YOU</p>
+  <p style="margin-top:30px;font-size:13px;color:#9A9288">杨德昌电影宇宙可视化 · 期末汇报</p>
+</section>
+
+<script>
+function show(n){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  document.getElementById('m'+n).classList.add('active');
+  document.querySelectorAll('.nav button').forEach((b,i)=>{b.classList.toggle('active',i===n-1)});
+  document.getElementById('m'+n).scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
